@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vẽ bằng tay - Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0a0a14;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            touch-action: none;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 24px;
+            padding: 16px;
+            max-width: 800px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        h1 {
+            color: #e0d6ff;
+            text-align: center;
+            font-weight: 300;
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+        
+        h1 span {
+            background: linear-gradient(135deg, #ff6b8a, #ff3b6a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            background: #0a0a14;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.9);
+            aspect-ratio: 4/3;
+            width: 100%;
+        }
+        
+        #videoCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+            transform: scaleX(-1);
+            background: #0a0a14;
+        }
+        
+        #drawCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #e0d6ff;
+            font-size: 0.85rem;
+            padding: 10px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+            flex: 1 1 auto;
+            min-width: 60px;
+            justify-content: center;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            border: none;
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            border: none;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f6d365, #fda085);
+            border: none;
+            color: #1a1a2e;
+        }
+        
+        .settings {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 5px 12px 5px 16px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .setting-group label {
+            color: #b5aed6;
+            font-size: 0.8rem;
+        }
+        
+        .setting-group input[type="color"] {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            background: none;
+            padding: 0;
+        }
+        
+        .setting-group input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        
+        .setting-group input[type="color"]::-webkit-color-swatch {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+        }
+        
+        .setting-group input[type="range"] {
+            width: 60px;
+            height: 3px;
+            -webkit-appearance: none;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .setting-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .status {
+            color: #b5aed6;
+            text-align: center;
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px 16px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            min-width: 120px;
+            flex: 1;
+        }
+        
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        
+        .dot.green { background: #4ade80; box-shadow: 0 0 20px rgba(74, 222, 128, 0.3); }
+        .dot.red { background: #f87171; box-shadow: 0 0 20px rgba(248, 113, 113, 0.3); }
+        .dot.yellow { background: #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.3); }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .instruction {
+            color: #6a6488;
+            text-align: center;
+            font-size: 0.75rem;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px 12px;
+        }
+        
+        .instruction span {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        
+        .camera-error {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            color: #f87171;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .camera-error.show {
+            display: block;
+        }
+        
+        @media (max-width: 480px) {
+            .container { padding: 10px; }
+            .btn { font-size: 0.75rem; padding: 8px 12px; min-width: 50px; }
+            .status { font-size: 0.7rem; padding: 4px 12px; }
+            .setting-group { padding: 3px 8px 3px 12px; }
+            .setting-group input[type="range"] { width: 40px; }
+            h1 { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎨 Vẽ bằng <span>tay</span></h1>
+    
+    <div class="canvas-wrapper">
+        <video id="videoCanvas" autoplay playsinline muted></video>
+        <canvas id="drawCanvas"></canvas>
+    </div>
+    
+    <div id="cameraError" class="camera-error">
+        ⚠️ Không thể mở camera. Vui lòng cấp quyền camera và thử lại.
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-primary" id="startBtn">📷 Bắt đầu</button>
+        <button class="btn btn-danger" id="clearBtn">🗑️ Xoá</button>
+        <button class="btn btn-success" id="saveBtn">💾 Lưu</button>
+        <button class="btn btn-warning" id="undoBtn">↩️ Hoàn tác</button>
+    </div>
+    
+    <div class="settings">
+        <div class="setting-group">
+            <label>🎨</label>
+            <input type="color" id="colorPicker" value="#ff6b8a">
+        </div>
+        <div class="setting-group">
+            <label>✏️</label>
+            <input type="range" id="sizePicker" min="2" max="20" value="6">
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status" id="statusDisplay">
+            <span class="dot yellow"></span> Đang khởi tạo...
+        </div>
+        <div class="status" id="handStatus">👋 Chưa có tay</div>
+    </div>
+    
+    <div class="instruction">
+        <span>✋ Giơ tay trước camera</span>
+        <span>👆 Di chuyển ngón trỏ để vẽ</span>
+        <span>✊ Nắm tay để dừng vẽ</span>
+    </div>
+</div>
+
+<!-- Thư viện MediaPipe -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous">
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous">
+</script>
+
+<script>
+(function() {
+    // === DOM ===
+    const video = document.getElementById('videoCanvas');
+    const canvas = document.getElementById('drawCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('statusDisplay');
+    const handStatusEl = document.getElementById('handStatus');
+    const colorPicker = document.getElementById('colorPicker');
+    const sizePicker = document.getElementById('sizePicker');
+    const cameraError = document.getElementById('cameraError');
+
+    // === State ===
+    let isDrawing = false;
+    let lastX = null, lastY = null;
+    let isCameraOn = false;
+    let handsInstance = null;
+    let drawColor = '#ff6b8a';
+    let drawSize = 6;
+    let frameCount = 0;
+    let lastFpsUpdate = performance.now();
+    let history = [];
+    const MAX_HISTORY = 30;
+    let currentHistoryIndex = -1;
+    let isProcessing = false;
+
+    // === Canvas sizing ===
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        
+        ctx.scale(dpr, dpr);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        if (currentHistoryIndex >= 0 && currentHistoryIndex < history.length) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = history[currentHistoryIndex];
+        }
+    }
+
+    // === History ===
+    function saveState() {
+        const imageData = canvas.toDataURL();
+        if (currentHistoryIndex < history.length - 1) {
+            history = history.slice(0, currentHistoryIndex + 1);
+        }
+        history.push(imageData);
+        if (history.length > MAX_HISTORY) {
+            history.shift();
+        }
+        currentHistoryIndex = history.length - 1;
+    }
+
+    function undo() {
+        if (currentHistoryIndex > 0) {
+            currentHistoryIndex--;
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = history[currentHistoryIndex];
+            statusEl.innerHTML = '<span class="dot yellow"></span> Đã hoàn tác';
+        }
+    }
+
+    // === Drawing ===
+    function drawPoint(x, y) {
+        ctx.beginPath();
+        ctx.arc(x, y, drawSize / 2, 0, 2 * Math.PI);
+        ctx.fillStyle = drawColor;
+        ctx.shadowColor = drawColor;
+        ctx.shadowBlur = 15;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    function drawLine(x1, y1, x2, y2) {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = drawColor;
+        ctx.lineWidth = drawSize;
+        ctx.shadowColor = drawColor;
+        ctx.shadowBlur = 12;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function drawFingerTip(x, y) {
+        ctx.beginPath();
+        ctx.arc(x, y, drawSize * 1.5, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+        ctx.shadowColor = '#ffbb00';
+        ctx.shadowBlur = 20;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        ctx.beginPath();
+        ctx.arc(x, y, drawSize * 1.5, 0, 2 * Math.PI);
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    // === MediaPipe Results ===
+    function onResults(results) {
+        frameCount++;
+        const now = performance.now();
+        if (now - lastFpsUpdate > 1000) {
+            frameCount = 0;
+            lastFpsUpdate = now;
+        }
+
+        const hasHand = results.multiHandLandmarks && results.multiHandLandmarks.length > 0;
+        
+        if (!hasHand) {
+            isDrawing = false;
+            lastX = null;
+            lastY = null;
+            statusEl.innerHTML = '<span class="dot yellow"></span> ✋ Không thấy tay';
+            handStatusEl.textContent = '👋 Chưa có tay';
+            return;
+        }
+
+        const landmarks = results.multiHandLandmarks[0];
+        const indexTip = landmarks[8];
+        const thumbTip = landmarks[4];
+        const middleTip = landmarks[12];
+
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = rect.width;
+        const scaleY = rect.height;
+
+        const x = indexTip.x * scaleX;
+        const y = indexTip.y * scaleY;
+
+        // Kiểm tra nắm tay
+        const thumbIndexDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
+        const indexMiddleDist = Math.hypot(indexTip.x - middleTip.x, indexTip.y - middleTip.y);
+        const FIST_THRESHOLD = 0.09;
+        const isFist = (thumbIndexDist < FIST_THRESHOLD) || (indexMiddleDist < FIST_THRESHOLD);
+
+        if (isFist) {
+            isDrawing = false;
+            lastX = null;
+            lastY = null;
+            statusEl.innerHTML = '<span class="dot red"></span> ✊ Đã dừng';
+            handStatusEl.textContent = '✊ Nắm tay';
+        } else {
+            if (!isDrawing) {
+                saveState();
+                isDrawing = true;
+            }
+            statusEl.innerHTML = '<span class="dot green"></span> ✋ Đang vẽ';
+            handStatusEl.textContent = '✋ Vẽ';
+            
+            if (lastX !== null && lastY !== null) {
+                drawLine(lastX, lastY, x, y);
+            }
+            drawPoint(x, y);
+            lastX = x;
+            lastY = y;
+        }
+
+        drawFingerTip(x, y);
+    }
+
+    // === MediaPipe Setup ===
+    function initHands() {
+        try {
+            const hands = new Hands({
+                locateFile: (file) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+                }
+            });
+
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.4,
+            });
+
+            hands.onResults(onResults);
+            handsInstance = hands;
+            return true;
+        } catch (e) {
+            console.error('Lỗi khởi tạo MediaPipe:', e);
+            return false;
+        }
+    }
+
+    // === Camera Setup ===
+    async function startCamera() {
+        cameraError.classList.remove('show');
+        
+        // Kiểm tra trình duyệt có hỗ trợ camera không
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            cameraError.textContent = '⚠️ Trình duyệt không hỗ trợ camera. Vui lòng dùng Chrome hoặc Edge.';
+            cameraError.classList.add('show');
+            return false;
+        }
+
+        try {
+            // Thử các cấu hình camera khác nhau
+            const constraints = [
+                {
+                    video: { 
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                },
+                {
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                },
+                {
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                }
+            ];
+
+            let stream = null;
+            for (const constraint of constraints) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraint);
+                    break;
+                } catch (e) {
+                    continue;
+                }
+            }
+
+            if (!stream) {
+                throw new Error('Không thể kết nối camera');
+            }
+
+            video.srcObject = stream;
+            await video.play();
+            isCameraOn = true;
+            
+            statusEl.innerHTML = '<span class="dot green"></span> 📷 Camera đã sẵn sàng';
+            return true;
+            
+        } catch (err) {
+            console.error('Lỗi camera:', err);
+            cameraError.textContent = `⚠️ Lỗi: ${err.message || 'Không thể mở camera'}`;
+            cameraError.classList.add('show');
+            return false;
+        }
+    }
+
+    // === Main App ===
+    async function initApp() {
+        // Khởi tạo MediaPipe
+        const handsOk = initHands();
+        if (!handsOk) {
+            statusEl.innerHTML = '<span class="dot red"></span> ❌ Lỗi AI';
+            return;
+        }
+
+        // Mở camera
+        const cameraOk = await startCamera();
+        if (!cameraOk) {
+            return;
+        }
+
+        // Vòng lặp xử lý
+        const processFrame = async () => {
+            if (!isCameraOn || !handsInstance || isProcessing) {
+                if (isCameraOn) {
+                    requestAnimationFrame(processFrame);
+                }
+                return;
+            }
+            
+            try {
+                isProcessing = true;
+                await handsInstance.send({ image: video });
+                isProcessing = false;
+            } catch (e) {
+                isProcessing = false;
+            }
+            
+            if (isCameraOn) {
+                requestAnimationFrame(processFrame);
+            }
+        };
+
+        // Đợi video sẵn sàng
+        video.addEventListener('loadedmetadata', () => {
+            resizeCanvas();
+            processFrame();
+        });
+
+        // Nếu video đã sẵn sàng
+        if (video.readyState >= 2) {
+            resizeCanvas();
+            processFrame();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+    }
+
+    // === Event Listeners ===
+    document.getElementById('startBtn').addEventListener('click', async () => {
+        // Dừng camera cũ
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+        }
+        isCameraOn = false;
+        
+        // Reset
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        lastX = null;
+        lastY = null;
+        isDrawing = false;
+        history = [];
+        currentHistoryIndex = -1;
+        
+        // Khởi tạo lại
+        await initApp();
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        lastX = null;
+        lastY = null;
+        history = [];
+        currentHistoryIndex = -1;
+        saveState();
+        statusEl.innerHTML = '<span class="dot yellow"></span> 🧹 Đã xoá';
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = `ve-tay-${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        statusEl.innerHTML = '<span class="dot green"></span> 💾 Đã lưu';
+    });
+
+    document.getElementById('undoBtn').addEventListener('click', undo);
+
+    colorPicker.addEventListener('input', (e) => {
+        drawColor = e.target.value;
+    });
+
+    sizePicker.addEventListener('input', (e) => {
+        drawSize = parseInt(e.target.value);
+    });
+
+    // === Start ===
+    setTimeout(() => {
+        resizeCanvas();
+        saveState();
+    }, 100);
+
+    initApp();
+
+    // === Cleanup ===
+    window.addEventListener('beforeunload', () => {
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+        isCameraOn = false;
+    });
+
+})();
+</script>
+</body>
+</html>
